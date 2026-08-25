@@ -162,6 +162,9 @@ const activeRoundId = useRoundStore((state) => state.activeRound?.id ?? null);
   const [isBetModalOpen, setIsBetModalOpen] = useState(false);
   const [pendingPrediction, setPendingPrediction] = useState<PredictionData | null>(null);
   const [optimisticPrediction, setOptimisticPrediction] = useState<UserPrediction | null>(null);
+  // Bumped on a successful submit so PredictionHistory re-fetches and picks
+  // up the now-confirmed prediction once the optimistic row is cleared.
+  const [historyRefreshSignal, setHistoryRefreshSignal] = useState(0);
   // Community chat is opt-in so the default terminal stays uncluttered.
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isEventLogOpen, setIsEventLogOpen] = useState(false);
@@ -613,7 +616,11 @@ const activeRoundId = useRoundStore((state) => state.activeRound?.id ?? null);
                   onRetry={fetchActivities}
                 />
               )}
-              <PredictionHistory userId={publicKey} optimisticPrediction={optimisticPrediction} />
+              <PredictionHistory
+                userId={publicKey}
+                optimisticPrediction={optimisticPrediction}
+                refreshSignal={historyRefreshSignal}
+              />
             </div>
           </div>
         )}
@@ -639,6 +646,7 @@ setOptimisticPrediction(null);
           }
           void fetchStats();
           void fetchActivities();
+          setHistoryRefreshSignal((n) => n + 1);
         }}
       />
       <EndRoundModal
