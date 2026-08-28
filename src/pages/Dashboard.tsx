@@ -35,7 +35,7 @@ import SorobanInspectorPanel from '../components/SorobanInspectorPanel';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 
 import { inspectSorobanState, type SorobanInspectorSnapshot } from "../lib/xelma-contract";
-import { mockUserStats, mockRounds } from "../data/mockData";
+import { mockRounds } from "../data/mockData";
 
 import type { RecentActivityItem } from "../types";
 import { toast } from "sonner";
@@ -595,7 +595,7 @@ const activeRoundId = useRoundStore((state) => state.activeRound?.id ?? null);
 
               {isWalletConnected && (
                 <StatsCard
-                  stats={stats || mockUserStats}
+                  stats={stats}
                   isLoading={isStatsLoading}
                   error={statsError || undefined}
                   onRetry={fetchStats}
