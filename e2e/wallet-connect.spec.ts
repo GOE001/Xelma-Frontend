@@ -5,6 +5,7 @@ const MOCK_ADDRESS = 'GBHExampleAddressForTestingPurposesOnly1234567890ABCDE';
 /** Inject a fake Freighter wallet object before any app code runs. */
 function mockFreighter(page: import('@playwright/test').Page) {
   return page.addInitScript(() => {
+    localStorage.setItem('xelma_onboarding_dismissed', 'true');
     (window as unknown as Record<string, unknown>).freighter = {
       isConnected: () => Promise.resolve({ isConnected: true }),
       requestAccess: () =>
@@ -44,8 +45,8 @@ test.describe('Wallet Connect – Freighter Mocked', () => {
 
     await page.goto('/connect');
 
-    // The Connect page renders the WalletConnect component
-    const connectButton = page.getByRole('button', { name: /connect wallet/i });
+    // The Connect page renders the WalletConnect component inside the glass-card
+    const connectButton = page.locator('.glass-card').getByRole('button', { name: /connect wallet/i });
     await expect(connectButton).toBeVisible();
   });
 
@@ -87,8 +88,8 @@ test.describe('Wallet Connect – Freighter Mocked', () => {
     // Should navigate to /connect
     await expect(page).toHaveURL(/\/connect/);
 
-    // Click "Connect Wallet" button to initiate Freighter flow
-    const connectButton = page.getByRole('button', { name: /connect wallet/i });
+    // Click "Connect Wallet" button in the glass-card to initiate Freighter flow
+    const connectButton = page.locator('.glass-card').getByRole('button', { name: /connect wallet/i });
     await expect(connectButton).toBeVisible();
     await connectButton.click();
 
@@ -97,3 +98,4 @@ test.describe('Wallet Connect – Freighter Mocked', () => {
     await expect(continueBtn).toBeVisible({ timeout: 10000 });
   });
 });
+
