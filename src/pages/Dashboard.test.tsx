@@ -1,5 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import '../i18n';
+import i18n from '../i18n';
 
 // Configurable search params for testing deep-linking
 let mockSearchParams = new URLSearchParams();
@@ -50,6 +52,8 @@ vi.mock('react-router-dom', () => ({
 import { useRoundStore } from '../store/useRoundStore';
 import { useWalletStore } from '../store/useWalletStore';
 import { predictionsApi, ApiError, educationApi, statsApi } from '../lib/api-client';
+import { useSettingsStore, DEFAULT_SETTINGS } from '../store/useSettingsStore';
+import { bindSoundPreference, playRoundResolutionCue } from '../utils/audioController';
 import Dashboard from './Dashboard';
 
 
@@ -230,6 +234,12 @@ vi.mock('../components/CountdownTimer', () => ({
   ),
 }));
 
+vi.mock('../utils/audioController', () => ({
+  bindSoundPreference: vi.fn(),
+  clearSoundPreferenceBinding: vi.fn(),
+  playRoundResolutionCue: vi.fn(),
+}));
+
 
 describe('Dashboard', () => {
 
@@ -258,10 +268,31 @@ describe('Dashboard', () => {
       status: 'connected',
       publicKey: 'GTEST123',
     });
+
+    localStorage.clear();
+    useSettingsStore.setState({ ...DEFAULT_SETTINGS });
+
+    // vi.resetAllMocks() above clears the global window.matchMedia
+    // implementation from src/test/setup.ts — re-establish it so
+    // useReducedMotion() (used by the deep-linked RoundCard scroll effect)
+    // doesn't crash on `.matches` of undefined.
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    });
   });
 
-  afterEach(() => {
-    // no-op
+  afterEach(async () => {
+    await i18n.changeLanguage('en');
   });
 
   describe('rendering', () => {
@@ -340,6 +371,23 @@ describe('Dashboard', () => {
       const predictionCard = screen.getByTestId('prediction-card');
       expect(predictionCard).toHaveAttribute('data-connecting', 'true');
     });
+
+    it('mounts the profile summary panel when the wallet is connected', () => {
+      render(<Dashboard />);
+
+      expect(screen.getByLabelText('Your profile')).toBeInTheDocument();
+    });
+
+    it('omits the profile summary panel when the wallet is disconnected', () => {
+      vi.mocked(useWalletStore).mockImplementation(((selector: unknown) => {
+        const store = { ...mockWalletStore, status: 'idle', publicKey: null };
+        return selectFromStore(selector, store);
+      }) as never);
+
+      render(<Dashboard />);
+
+      expect(screen.queryByLabelText('Your profile')).not.toBeInTheDocument();
+    });
   });
 
   describe('round states', () => {
@@ -403,6 +451,60 @@ describe('Dashboard', () => {
     });
   });
 
+  describe('sound (unified with useSettingsStore)', () => {
+    const resolvedRound = {
+      id: 'round-123',
+      status: 'resolved',
+      isWin: true,
+      netChange: 42,
+      tip: 'Nice finish!',
+    };
+
+    function mockResolvedRound() {
+      vi.mocked(useRoundStore).mockImplementation((selector: any) => {
+        const store = { ...mockRoundStore, isRoundActive: false, resolvedRound };
+        return typeof selector === 'function' ? selector(store) : store;
+      });
+    }
+
+    it('binds the audio controller to the settings store on mount', () => {
+      render(<Dashboard />);
+      expect(bindSoundPreference).toHaveBeenCalledWith(expect.any(Function));
+    });
+
+    it('plays the round-resolution cue when settings sound is enabled', () => {
+      useSettingsStore.setState({ soundEnabled: true });
+      mockResolvedRound();
+
+      render(<Dashboard />);
+
+      expect(playRoundResolutionCue).toHaveBeenCalledWith(true);
+    });
+
+    it('does not play the round-resolution cue when settings sound is disabled', () => {
+      useSettingsStore.setState({ soundEnabled: false });
+      mockResolvedRound();
+
+      render(<Dashboard />);
+
+      expect(playRoundResolutionCue).not.toHaveBeenCalled();
+    });
+
+    it('never writes the legacy xelma_round_sound localStorage key', () => {
+      useSettingsStore.setState({ soundEnabled: true });
+      mockResolvedRound();
+
+      render(<Dashboard />);
+
+      expect(localStorage.getItem('xelma_round_sound')).toBeNull();
+    });
+
+    it('does not render an ad-hoc round sound toggle', () => {
+      render(<Dashboard />);
+      expect(screen.queryByText('Round sound')).not.toBeInTheDocument();
+    });
+  });
+
   describe('initialization', () => {
     it('fetches active round on mount', () => {
       render(<Dashboard />);
@@ -441,6 +543,38 @@ describe('Dashboard', () => {
       fireEvent.click(closeButton);
 
       expect(modal).toHaveAttribute('data-open', 'false');
+    });
+  });
+
+  describe('localization', () => {
+    it('renders Spanish wallet prompt and share button when locale is changed to es', async () => {
+      vi.mocked(useWalletStore).mockImplementation(((selector: unknown) => {
+        const store = { ...mockWalletStore, status: 'idle', publicKey: null };
+        return selectFromStore(selector, store);
+      }) as never);
+
+      await i18n.changeLanguage('es');
+
+      render(<Dashboard />);
+
+      expect(screen.getByTestId('dashboard-wallet-prompt')).toHaveTextContent(
+        'Conecta tu cartera para enviar predicciones.'
+      );
+      expect(screen.getByTestId('dashboard-connect-now')).toHaveTextContent('Conectar ahora');
+      expect(screen.getByText('Compartir')).toBeInTheDocument();
+    });
+
+    it('renders Spanish empty state when no round is active', async () => {
+      vi.mocked(useRoundStore).mockImplementation((selector: any) => {
+        const store = { ...mockRoundStore, isRoundActive: false };
+        return typeof selector === 'function' ? selector(store) : store;
+      });
+
+      await i18n.changeLanguage('es');
+
+      render(<Dashboard />);
+
+      expect(screen.getByText('No hay rondas activas')).toBeInTheDocument();
     });
   });
 });
