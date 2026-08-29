@@ -522,21 +522,24 @@ const PriceChart = ({ height = 300, asset = "XLM", entryPrice, onPriceUpdate }: 
 
   // Reload data when asset changes — reset and load mock/API data
   useEffect(() => {
-    setData([]);
-    setIsLoading(true);
-    setLoadError(null);
+    const timer = setTimeout(() => {
+      setData([]);
+      setIsLoading(true);
+      setLoadError(null);
 
-    // Use mock data directly for instant visual feedback per asset
-    const mockData = mockPriceData[asset];
-    if (mockData && mockData.length > 0) {
-      setData(mockData);
-      setLastUpdatedAt(new Date());
-      setIsLoading(false);
-    }
+      // Use mock data directly for instant visual feedback per asset
+      const mockData = mockPriceData[asset];
+      if (mockData && mockData.length > 0) {
+        setData(mockData);
+        setLastUpdatedAt(new Date());
+        setIsLoading(false);
+      }
 
-    // Also attempt to fetch live data from API
-    void loadInitialPrices();
-  }, [asset]); // eslint-disable-line react-hooks/exhaustive-deps
+      // Also attempt to fetch live data from API
+      void loadInitialPrices();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [asset, loadInitialPrices]);
 
   // Update chart line color when asset changes
   useEffect(() => {
