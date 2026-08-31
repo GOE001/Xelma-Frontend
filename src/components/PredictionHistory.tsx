@@ -89,6 +89,7 @@ export default function PredictionHistory({ userId, optimisticPrediction, refres
   const [history, setHistory] = useState<UserPrediction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const loadHistory = useCallback(async () => {
     if (!userId) {
@@ -103,6 +104,7 @@ export default function PredictionHistory({ userId, optimisticPrediction, refres
     try {
       const predictions = await predictionsApi.getUserHistory(userId);
       setHistory(predictions);
+      setVisibleCount(PAGE_SIZE);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch prediction history");
       setHistory([]);
@@ -110,6 +112,12 @@ export default function PredictionHistory({ userId, optimisticPrediction, refres
       setIsLoading(false);
     }
   }, [userId]);
+
+  const hasMore = visibleCount < history.length;
+
+  const loadMore = useCallback(() => {
+    setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, history.length));
+  }, [history.length]);
 
   const handleExportCSV = useCallback(() => {
     if (history.length === 0) return;
@@ -227,6 +235,24 @@ export default function PredictionHistory({ userId, optimisticPrediction, refres
             .filter((h) => !optimisticPrediction || h.id !== optimisticPrediction.id)
             .map((prediction, index) => renderPredictionRow(prediction, `${String(prediction.id)}-${index}`))}
         </ul>
+      )}
+
+      {!isLoading && !error && history.length > 0 && (
+        <div className="mt-4">
+          {hasMore ? (
+            <button
+              type="button"
+              onClick={loadMore}
+              className="w-full rounded-lg border border-gray-200 dark:border-gray-600 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              Load more
+            </button>
+          ) : (
+            <p className="text-center text-xs text-gray-500 dark:text-gray-400 py-1">
+              You've reached the end of your prediction history
+            </p>
+          )}
+        </div>
       )}
     </section>
   );
