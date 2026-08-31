@@ -46,6 +46,7 @@ describe('EndRoundModal accessibility', () => {
       expect(lossRegion).toHaveTextContent(/round result: loss/i);
       expect(lossRegion).toHaveTextContent(/net loss minus \$15\.00/i);
     });
+    unmountLoss();
   });
 
   it('closes on Escape and restores focus to the trigger', async () => {
