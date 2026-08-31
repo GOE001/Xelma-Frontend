@@ -3,6 +3,7 @@ const en = {
     nav: {
       terminal: 'Terminal',
       pools: 'Pools',
+      tournament: 'Tournament',
       leaderboard: 'Leaderboard',
       learn: 'Learn',
       profile: 'Profile',
@@ -38,6 +39,16 @@ const en = {
   },
   footer: {
     description: 'Collective market intelligence on Stellar',
+  },
+  tournament: {
+    title: 'Tournaments',
+    description:
+      'Compete against other predictors in structured tournament brackets. Climb the leaderboard, earn exclusive rewards, and prove your market intuition.',
+    modesTitle: 'Tournament Formats',
+    modesSubtitle:
+      'Two competitive modes are planned, each rewarding different prediction strategies.',
+    joinCTA: 'Join Tournament',
+    ctaDisabledHint: 'Tournament mode launches after mainnet. Connect your wallet to be notified.',
   },
   testFallback: 'Fallback test',
 };
