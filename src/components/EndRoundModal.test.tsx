@@ -19,7 +19,7 @@ describe('EndRoundModal accessibility', () => {
   });
 
   it('renders an aria-live region announcing win outcome', async () => {
-    const { container } = render(
+    render(
       <EndRoundModal isOpen onClose={vi.fn()} result={result} />,
     );
     await waitFor(() => {
