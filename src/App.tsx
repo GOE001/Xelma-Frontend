@@ -38,6 +38,7 @@ function App() {
         Skip to main content
       </a>
       <OfflineBanner />
+      <RouteProgressBar />
       <Navbar />
       <CommandPalette />
       <ErrorBoundary>
