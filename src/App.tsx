@@ -6,6 +6,7 @@ import CommandPalette from './components/CommandPalette';
 import PageSkeleton from './components/PageSkeleton';
 import Landing from './pages/Landing';
 import RouteFallback from './components/RouteFallback';
+import RouteTransition from './components/RouteTransition';
 import LazyBoundary from './components/LazyBoundary';
 import ErrorBoundary from './components/ErrorBoundary';
 import { OfflineBanner } from './components/OfflineBanner';
@@ -57,8 +58,9 @@ function App() {
               <Route path="/settings" element={<Suspense fallback={<PageSkeleton type="settings" />}><Settings /></Suspense>} />
               <Route path="*" element={<Navigate to="/" replace />} />
 
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </RouteTransition>
           </Suspense>
         </LazyBoundary>
       </ErrorBoundary>
