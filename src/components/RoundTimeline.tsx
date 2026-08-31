@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Round } from '../lib/api-client';
 import { useRoundStore } from '../store/useRoundStore';
+import PredictionPulse from './PredictionPulse';
 
 interface TimelineState {
   label: string;
@@ -348,6 +349,16 @@ const RoundTimeline: React.FC = () => {
             </span>
           </div>
         </div>
+
+        {/* Prediction pulse — shown when round is live or resolving */}
+        {(currentState === 'live' || currentState === 'resolving') && (
+          <div className="mt-4 flex items-center gap-2">
+            <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">
+              Predictions
+            </span>
+            <PredictionPulse />
+          </div>
+        )}
       </div>
     </section>
   );
